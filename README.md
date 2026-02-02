@@ -124,8 +124,113 @@ df_agregado['Desvio_Padrao'] = df_agregado['Desvio_Padrao'].fillna(0.0)
 df_agregado.sort_values(by='Valor_Total', ascending=False, inplace=True)
 ```
 
+## Decisões Técnicas da Tarefa 3 - TESTE DE BANCO DE DADOS E ANÁLISE
+
+Esta etapa consistiu na modelagem, carga e análise de dados utilizando **PostgreSQL** (via Docker).
+
+### 3.1 e 3.3. Estratégia de Carga e Tratamento de Inconsistências
+Devido à arquitetura containerizada (Docker), a carga de dados via `LOAD DATA INFILE` nativo apresentaria complexidade de permissões de volume. Como abordagem, usei o Script Python (`etl/carga_banco.py`) utilizando `SQLAlchemy` e `Pandas`. O qual permite tratamento prévio de inconsistências (limpeza de `NULLs`, conversão de encoding `ISO-8859-1` para `UTF-8`) antes da inserção, garantindo que apenas dados sanitizados entrem no banco.
+
+Exemplo para a sanitização antes da carga do banco de dados
+```python
+df['valor'] = pd.to_numeric(df['valor'], errors='coerce').fillna(0)
+
+# Mapea explicitamente para Numeric(15, 2) no banco.
+# O uso de FLOAT é evitado para garantir precisão financeira.
+df.to_sql('fato_despesas', engine, if_exists='replace', index=False,
+          dtype={'valor': Numeric(15, 2), 'ano': Integer(), 'trimestre': Integer()})
+
+# Como o Pandas não cria índices nativamente, executei DDL 
+# manual para otimizar as queries analíticas subsequentes.
+with engine.connect() as conn:
+    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fato_cnpj ON fato_despesas(cnpj_origem);"))
+    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fato_tempo ON fato_despesas(ano, trimestre);"))
+    conn.commit()
+```
+
+### 3.2. Modelagem de Dados e Trade-offs
+Para atender aos requisitos de performance e integridade, tomei as seguintes decisões:
+
+#### **A. Normalização: Opção Tabelas normalizadas separadas**
+O modelo foi separado em **Fato** (`fato_despesas`) e **Dimensão** (`dim_operadoras`).
+Os Dados cadastrais são mutáveis. A normalização garante que uma alteração cadastral seja feita em um único registro, refletindo automaticamente em todas as transações. A tabela fato possui ~76 mil registros. Repetir textos longos em cada linha aumentaria desnecessariamente o I/O de disco e o uso de memória.
+
+#### **B. Tipos de Dados**
+Para valores monetários, optei por **DECIMAL** em vez de `FLOAT` porque tipos de ponto flutuante (`FLOAT`) introduzem erros de arredondamento (ex: `0.1 + 0.2 != 0.3`) inaceitáveis para dados financeiros.
+Para datas, colunas `ano` e `trimestre` foram tipadas como Inteiros porque a granularidade da análise é trimestral. Usar `DATE` exigiria funções de extração (`EXTRACT(YEAR FROM...)`) em todas as queries, reduzindo a performance de índices sem ganho funcional.
+
+#### **C. Performance e Índices**
+Para garantir a velocidade das queries analíticas, foram criados índices B-Tree explícitos:
+* `idx_fato_cnpj`: Acelera o JOIN entre a Fato e a Dimensão.
+* `idx_fato_tempo`: Acelera filtros temporais (`WHERE ano = X`).
+* `PK (reg_ans)`: Garante unicidade e integridade referencial na dimensão.
+
+Exemplo para a modelagem no banco de dados
+```python
+# Numeric(15,2) é essencial para evitar erros de arredondamento em dados financeiros.
+# Integer é melhor performance de indexação que Date para esta granularidade.
+type_fato = {
+    'valor': Numeric(15, 2),
+    'ano': Integer(),     
+    'trimestre': Integer(),
+    'cnpj_origem': String(20)
+}
+
+df.to_sql('fato_despesas', engine, if_exists='replace', index=False, dtype=dtype_fato)
+
+# O Pandas não gerencia chaves ou índices. Executei DDL manual para:
+# Definir Primary Key na dimensão.
+# Criar índices B-Tree para acelerar Joins e Filtros Temporais.
+with engine.connect() as conn:
+    conn.execute(text("ALTER TABLE dim_operadoras ADD PRIMARY KEY (reg_ans);"))
+
+    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fato_cnpj ON fato_despesas(cnpj_origem);"))
+    
+    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_fato_tempo ON fato_despesas(ano, trimestre);"))
+```
+### 3.4. Queries Analíticas (`sql/queries.sql`)
+As queries foram desenvolvidas focando em legibilidade e performance.
+
+Para o crescimento trimestral, utilizei Window Functions (FIRST_VALUE) com ordenações opostas (ASC/DESC). Isso permite capturar o primeiro e o último registro de cada operadora em uma única passagem (Scan), eliminando a necessidade de múltiplos self-joins custosos. Para a distribuição geográfica, usei agregação simples com tratamento de divisão por zero (NULLIF). Por fim, optei por CTEs (Common Table Expressions) para isolar o cálculo da média de mercado, tornando o código mais legível e modular comparado a subqueries aninhadas.
+
+```sql
+WITH limites_temporais AS (
+    -- Uso de Window Functions evita Self-Joins.
+    -- Busca o primeiro e último valor manipulando apenas a ordem (ASC/DESC) na partição.
+    SELECT DISTINCT
+        razao_social,
+        FIRST_VALUE(total_trimestre) OVER (PARTITION BY ... ORDER BY ... ASC) as valor_inicial,
+        FIRST_VALUE(total_trimestre) OVER (PARTITION BY ... ORDER BY ... DESC) as valor_final
+    FROM despesas_trimestrais
+)
+SELECT 
+    razao_social,
+    -- NULLIF trata operadoras que iniciaram zeradas, evitando erro de "Division by Zero" que derrubaria a 
+    --- execução do relatório.
+    ROUND(((valor_final - valor_inicial) / NULLIF(valor_inicial, 0)) * 100, 2) as crescimento_pct
+FROM limites_temporais
+WHERE valor_inicial > 0
+ORDER BY crescimento_pct DESC
+LIMIT 5;
+```
+
 ### Como Executar: 
-Pré-requisitos: Python 3.10+
+Pré-requisitos: 
+- Python 3.10+
+- PostgreSQL (Local ou Docker)
+
+1. Configuração de Ambiente Crie um arquivo .env na raiz do projeto com as credenciais do banco (ou use o padrão do código):
+```bash
+DB_HOST=localhost
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=postgres
+```
+(Opcional) Se tiver Docker instalado, suba um banco rapidamente:
+
+```bash
+docker run --name pg-test -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:13
+```
 
 1. Instale as dependências:
 
@@ -135,7 +240,7 @@ Pré-requisitos: Python 3.10+
 
     ```pytest```
 
-2. Execute o Pipeline ETL (Ordem Sequencial):
+2. Execute o Pipeline ETL:
 
     Tarefa 1: ETL e Consolidação
     ``` bash
@@ -161,7 +266,22 @@ Pré-requisitos: Python 3.10+
         python -m etl.agregacao
     ```
 
+    Tarefa 3: Banco de Dados e SQL
+    ``` bash
+        # Carga Otimizada no Banco
+        python -m etl.carga_banco
+    ```
+
+    Execução de Testes:
+    ``` bash
+        # Testes Unitários (Lógica de ETL)
+        pytest tests/test_agregacao.py tests/test_validacao.py tests/test_enriquecimento.py
+
+        # Testes de Integração (Banco de Dados e Queries SQL)
+        pytest tests/test_banco.py tests/test_queries.py
+    ```
+
 3. Verifique os arquivos: Os arquivos solicitados no teste estarão disponíveis em:
 
-    - ```data/processed/consolidado_despesas.zip``` (Entrega da Tarefa 1)
-    - ```data/processed/teste_seu_nome.zip``` (Entrega da Tarefa 2)
+    - **ETL:** ```data/processed/consolidado_despesas.zip```
+    - **Agregação:** ```data/processed/teste_seu_nome.zip```
