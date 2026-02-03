@@ -32,7 +32,9 @@ class Despesa(Base):
 class EstatisticaAgregada(Base):
     __tablename__ = "agg_despesas"
     
-    razao_social = Column(String, primary_key=True)
+    # Mapeia a coluna no banco de dados 'razaosocial' para o atributo Python 'razao_social'
+    razao_social = Column("razaosocial", String, primary_key=True)
+    
     uf = Column(String, primary_key=True) 
     valor_total = Column(Numeric(18, 2))
     media_trimestral = Column(Numeric(18, 2))
