@@ -2,12 +2,25 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import database, models
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import operadoras, estatisticas
 
 app = FastAPI(
     title="API de Despesas ANS",
     description="API para consulta de dados financeiros de operadoras de saúde.",
     version="1.0.0"
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(operadoras.router)
+app.include_router(estatisticas.router)
 
 @app.get("/")
 def read_root():
