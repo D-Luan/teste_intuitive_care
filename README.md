@@ -15,6 +15,8 @@ Este repositório contém a solução completa para o desafio técnico, abrangen
 - [Tarefa 2: Qualidade e Transformação](#decisões-técnicas-da-tarefa-2---teste-de-transformação-e-validação-de-dados)
 - [Tarefa 3: Banco de Dados](#decisões-técnicas-da-tarefa-3---teste-de-banco-de-dados-e-análise)
 - [Tarefa 4: API e Frontend](#decisões-técnicas-da-tarefa-4---teste-de-api-e-interface-web)
+- [Imagens do Dashboard](#dashboard-de-estatísticas)
+- [Documentação da API](#44-documentação-da-api)
 - [Arquivos ZIPs para Avaliação](#arquivos-zips-para-avaliação)
 - [Diferenciais do Projeto](#diferenciais-e-qualidade-de-código)
 - [Como Executar](#como-executar)
