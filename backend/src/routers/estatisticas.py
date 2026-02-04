@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from .. import database, models
+from sqlalchemy import text
+from .. import database
 
 router = APIRouter(prefix="/api/estatisticas", tags=["Estatísticas"])
 
@@ -11,32 +11,52 @@ def obter_estatisticas(db: Session = Depends(database.get_db)):
     Retorna indicadores consolidados, ranking e 
     distribuição geográfica para gráficos.
     """
-    
-    top_5 = db.query(models.EstatisticaAgregada)\
-        .order_by(models.EstatisticaAgregada.valor_total.desc())\
-        .limit(5)\
-        .all()
-    
-    total_geral = db.query(func.sum(models.EstatisticaAgregada.valor_total)).scalar() or 0
-    media_geral = db.query(func.avg(models.EstatisticaAgregada.valor_total)).scalar() or 0
 
-    # Consolida os valores por Estado para alimentar gráficos de mapa/barras no Frontend.
-    por_uf = db.query(
-        models.EstatisticaAgregada.uf,
-        func.sum(models.EstatisticaAgregada.valor_total).label("total")
-    ).group_by(models.EstatisticaAgregada.uf)\
-     .order_by(func.sum(models.EstatisticaAgregada.valor_total).desc())\
-     .all()
+    # Agrupamos por Razão Social e UF para reduzir a granularidade dos dados
+    # antes de trazer para a aplicação.
+    sql = text("""
+        SELECT 
+            op.razao_social, 
+            op.uf, 
+            SUM(f.valor) as total
+        FROM fato_despesas f
+        JOIN dim_operadoras op ON f.cnpj_origem = op.cnpj
+        GROUP BY op.razao_social, op.uf
+        ORDER BY total DESC
+    """)
+    
+    results = db.execute(sql).fetchall()
+    
+    dados_processados = []
+    total_geral = 0.0
+    
+    for row in results:
+        val = float(row.total)
+        dados_processados.append({
+            "razao_social": row.razao_social,
+            "uf": row.uf,
+            "total": val
+        })
+        total_geral += val
+
+    qtd = len(dados_processados)
+    media = total_geral / qtd if qtd > 0 else 0
+    
+    top_5 = dados_processados[:5]
+
+    uf_dict = {}
+    for item in dados_processados:
+        uf = item['uf']
+        if uf not in uf_dict:
+            uf_dict[uf] = 0.0
+        uf_dict[uf] += item['total']
+    
+    por_uf = [{"uf": k, "total": v} for k, v in uf_dict.items()]
+    por_uf.sort(key=lambda x: x['total'], reverse=True)
 
     return {
-        "total_geral": float(total_geral),
-        "media_geral": float(media_geral),
-        "top_5": [
-            {"razao_social": t.razao_social, "total": float(t.valor_total)} 
-            for t in top_5
-        ],
-        "por_uf": [
-            {"uf": row.uf, "total": float(row.total)}
-            for row in por_uf
-        ]
+        "total_geral": total_geral,
+        "media_geral": media,
+        "top_5": top_5,
+        "por_uf": por_uf
     }
