@@ -1,10 +1,26 @@
 # Teste de Desenvolvimento de Software da Intuitive Care
 
-Este repositório contém a solução para o desafio técnico de processamento de dados da ANS (Agência Nacional de Saúde Suplementar). A solução foca em construção de pipelines ETL resilientes, limpeza de dados e análise estruturada.
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Status](https://img.shields.io/badge/STATUS-CONCLUÍDO-success?style=for-the-badge)
+
+Este repositório contém a solução completa para o desafio técnico, abrangendo desde o processamento de dados da ANS (ETL) até a visualização em um Dashboard interativo.
+
+### Índice
+- [Tarefa 1: Integração e ETL](#decisões-técnicas-da-tarefa-1---teste-de-integração-com-api-pública)
+- [Tarefa 2: Qualidade e Transformação](#decisões-técnicas-da-tarefa-2---teste-de-transformação-e-validação-de-dados)
+- [Tarefa 3: Banco de Dados](#decisões-técnicas-da-tarefa-3---teste-de-banco-de-dados-e-análise)
+- [Tarefa 4: API e Frontend](#decisões-técnicas-da-tarefa-4---teste-de-api-e-interface-web)
+- [Diferenciais do Projeto](#diferenciais-e-qualidade-de-código)
+- [Como Executar](#como-executar)
 
 ## Decisões Técnicas da Tarefa 1 - TESTE DE INTEGRAÇÃO COM API PÚBLICA
 
-O padrão ETL foi construido priorizando **flexibilidade**, **simplicidade** e **resiliência**. Abaixo estão os **Trade-off**:
+O padrão ETL foi construido priorizando flexibilidade, simplicidade e resiliência. Abaixo estão os **Trade-off**:
 
 ### 1.1. Acesso aos Dados Abertos da ANS via Web Scraping
 Utilizei a Abordagem de criar um Crawler Recursivo (`etl/download_ans.py`), devido a estrutura do servidor FTP da ANS variar muito. O script navega dinamicamente por diretórios e subdiretórios para encontrar os arquivos ZIP, evitando hardcoding de URLs. Para obter resiliência às variações, é implementada proteção contra loops de diretórios ("Parent Directory") e tratamento de exceções de SSL.
@@ -27,7 +43,8 @@ for link in soup.find_all('a', href=True):
 ```
 
 ### 1.2. Processamento de Arquivos
-Optei pelo **Processamento Incremental**. Dessa forma, o script `etl/processamento.py` processa um arquivo trimestral por vez (`Open -> Transform -> Append -> Close`). Isso garante que o pipeline rode com consumo de RAM baixo e constante (O(1)), independentemente do volume histórico de dados, evitando estouro de memória (OOM) em ambientes conteinerizados.
+Optei pelo **Processamento Incremental**. Dessa forma, o script `etl/processamento.py` processa um arquivo trimestral por vez (`Open -> Transform -> Append -> Close`). Isso garante que o pipeline rode com consumo de RAM baixo e constante (O(1)), independentemente do volume histórico de dados, evitando estouro de memória (OOM).
+Também implementei uma trava de duplicidade, o script identifica arquivos que referenciam o mesmo período (ex: "1T2023.zip" e "Cópia de 1T2023.zip") e processa apenas o primeiro, evitando duplicação de dados na origem.
 
 Exemplo da pipeline de leitura e escrita incremental (Append Pattern):
 
@@ -84,7 +101,7 @@ df['status_auditoria'] = df.apply(definir_status, axis=1)
 ```
 
 ### 2.2. Enriquecimento e Join
-Foi necessário cruzar as despesas com o cadastro de operadoras usando o **CNPJ** como chave. Como uma forma mais simplificada e rápida para o Join, decidi usar o **In-Memory Hash Join (Pandas Merge)**. Dado o volume final (~80k linhas na tabela fato e ~1k na dimensão), o uso de engines distribuídas (Spark) seria exagerado e provavelmente me custaria tempo. O Pandas gerencia esse volume em milissegundos com baixo custo de memória. Para o tratamento de falhas, o arquivo Cadop foi deduplicado mantendo a primeira ocorrência (`keep='first'`) para evitar o erro de "Fan-out" (multiplicação de linhas no join) durante o cruzamento. E para o LEFT JOIN, priorizei a tabela de Despesas. Operadoras sem cadastro ativo no Cadop não são descartadas, mas sim preenchidas como "DESCONHECIDA" para preservar o valor contábil total.
+Foi necessário cruzar as despesas com o cadastro de operadoras usando o CNPJ como chave. Como uma forma mais simplificada e rápida para o Join, decidi usar o In-Memory Hash Join (Pandas Merge). Dado o volume final (~80k linhas na tabela fato e ~1k na dimensão), o uso de engines distribuídas (Spark) seria exagerado e provavelmente me custaria tempo. O Pandas gerencia esse volume em milissegundos com baixo custo de memória. Para o tratamento de falhas, o arquivo Cadop foi deduplicado mantendo a primeira ocorrência (`keep='first'`) para evitar o erro de "Fan-out" durante o cruzamento. E para o LEFT JOIN, priorizei a tabela de Despesas. Operadoras sem cadastro ativo no Cadop não são descartadas, mas sim preenchidas como "DESCONHECIDA" para preservar o valor contábil total.
 
 ```python
 df_despesas['CNPJ_KEY'] = df_despesas['CNPJ'].apply(limpar_cnpj_join)
@@ -103,7 +120,7 @@ for col in cols_novas:
 ```
 
 ### 2.3. Agregação e Estatística
-O cálculo de média seguiu a regra de negócio de **dois níveis**: Soma das despesas **por trimestre** (visão temporal) e Média e Desvio Padrão calculados sobre os **totais trimestrais** (visão por entidade).
+O cálculo de média seguiu a regra de negócio de dois níveis: Soma das despesas por trimestre (visão temporal) e Média e Desvio Padrão calculados sobre os totais trimestrais (visão por entidade).
 Para a ordenação, eu escolhi o algoritmo **QuickSort** (nativo via `sort_values`). Após a agregação, o dataset é reduzido para nível de operadora (< 1.000 linhas). Ordenação em memória é a abordagem mais eficiente (Complexidade O(N log N)) para este volume.
 
 ```python
@@ -128,8 +145,9 @@ df_agregado.sort_values(by='Valor_Total', ascending=False, inplace=True)
 
 Esta etapa consistiu na modelagem, carga e análise de dados utilizando **PostgreSQL** (via Docker).
 
-### 3.1 e 3.3. Estratégia de Carga e Tratamento de Inconsistências
-Devido à arquitetura containerizada (Docker), a carga de dados via `LOAD DATA INFILE` nativo apresentaria complexidade de permissões de volume. Como abordagem, usei o Script Python (`etl/carga_banco.py`) utilizando `SQLAlchemy` e `Pandas`. O qual permite tratamento prévio de inconsistências (limpeza de `NULLs`, conversão de encoding `ISO-8859-1` para `UTF-8`) antes da inserção, garantindo que apenas dados sanitizados entrem no banco.
+### 3.1 e 3.3. Carga, Encoding e Agregação
+Devido à arquitetura containerizada (Docker), a carga de dados via `LOAD DATA INFILE` nativo apresentaria complexidade de permissões de volume. Como abordagem, usei o Script Python (`etl/carga_banco.py`) utilizando `SQLAlchemy` e `Pandas`. O qual permite tratamento prévio de inconsistências, como limpeza de `NULLs`, conversão de encoding `ISO-8859-1` para `UTF-8`, e caso o encoding falhe, faz fallback para CP1252 (padrão legado Windows/ANS). Isso garante que apenas dados sanitizados entrem no banco.
+E também, o script realiza uma SOMA (Group By) dos lançamentos contábeis por Operadora/Trimestre antes de inserir na tabela Fato. Isso garante que a tabela de banco reflita o valor total do período, alinhando os valores do Dashboard com o Histórico Detalhado.
 
 Exemplo para a sanitização antes da carga do banco de dados
 ```python
@@ -213,75 +231,170 @@ WHERE valor_inicial > 0
 ORDER BY crescimento_pct DESC
 LIMIT 5;
 ```
+## Decisões Técnicas da Tarefa 4 - TESTE DE API E INTERFACE WEB
+Esta etapa detalha as minhas escolhas de arquitetura para a API e Interface Web, justificando cada decisão técnica com base nos requisitos de performance, manutenção e experiência do usuário (UX).
+
+### 4.1 e 4.2. Backend (FastAPI + SQLAlchemy)
+A API foi construída seguindo os princípios RESTful, servindo como interface entre os dados processados e o frontend.
+
+Optei pelo FastAPI em vez do Flask devido à sua natureza assíncrona (ASGI) nativa e performance superior. A integração automática com Pydantic garante validação de dados robusta ("type safety") e a geração automática da documentação (Swagger UI) acelera o desenvolvimento. O Flask exigiria múltiplas bibliotecas externas para atingir o mesmo nível de funcionalidade.
+
+Para tabelas administrativas onde o usuário precisa "pular" para uma página específica, a paginação por Offset (`page`, `limit`) é a mais intuitiva. Embora `Cursor-based` seja mais performático para "scroll infinito", o volume de dados atual é perfeitamente gerenciado pelo banco com Offset sem problemas.
+
+Optei por não implementar cache (Redis) neste momento. Como a carga de dados é trimestral, a "pré-agregação" já foi realizada parcialmente durante a etapa de ETL. Além disso, a criação de índices B-Tree nas colunas de agrupamento (`ano`, `cnpj`) torna a execução da query sub-segundo, eliminando a complexidade de manter e invalidar cache externo.
+
+A API retorna um "envelope": `{ data: [...], total: 100, page: 1, limit: 10 }`. Enviar apenas o array de dados impediria o Frontend de saber o número total de páginas disponíveis para renderizar os botões de paginação corretamente.
+
+Exemplo dos endpoints:
+```python
+app.include_router(operadoras.router)
+app.include_router(estatisticas.router)
+
+@app.get("/")
+def read_root():
+    return {"message": "API do Teste Intuitive Care está online!"}
+
+@app.get("/health/db")
+```
+
+### 4.3. Frontend (Vue.js 3 + Tailwind)
+A interface foi desenvolvida com Vue 3 (Composition API) e Vite, focando em reatividade, com Tailwind para estilização rápida e consistente.
+
+A filtragem por Razão Social/CNPJ é enviada como query parameter para a API (`?search=bradesco`). Trazer todos os dados para o cliente aumentaria o tempo de carregamento inicial. Filtrar no servidor é a abordagem mais escalável.
+
+Utilizei a Composition API para criar lógicas reutilizáveis. O uso de uma store global como Pinia/Vuex adicionaria complexidade desnecessária para uma aplicação onde o estado raramente é compartilhado entre rotas distantes. Props e Events foram suficientes.
+
+A tabela renderiza apenas o número de linhas definido pelo `limit` (padrão 10), mantendo a árvore DOM leve. Não há necessidade de "Virtual Scrolling" complexo pois a paginação é feita no servidor.
+
+Para o tratamento de erros e UX:
+* **Loading:** Feedback visual ("Spinners") enquanto a Promise está pendente.
+* **Erros:** Mensagens amigáveis (`v-if="error"`) em vez de alertas genéricos ou tela branca.
+* **Empty States:** Mensagem explicativa ("Nenhum registro encontrado") para buscas vazias.
+
+Demonstração da aplicação Fullstack:
+### Dashboard de Estatísticas
+![Dashboard com Gráfico de Despesas](assets/dashboard_view.png)
+
+### Tabela de Busca das Operadoras
+![Tabela de Busca](assets/tabela_busca.png)
+
+### Detalhes da Operadora
+![Histórico de Despesas da Operadora](assets/operadora_detalhe.png)
+
+### 4.4. Documentação da API
+Conforme solicitado, uma coleção completa do Postman foi criada e versionada no repositório. Contêm exemplos de todas as rotas (`GET`), incluindo payloads de resposta e query parameters configurados.
+
+Veja a coleção em docs: [Intuitive Care API Collection](./docs/intuitivecare_api_collection.json)
+
+
+## Diferenciais e Qualidade de Código
+
+Além dos requisitos obrigatórios, o projeto conta com implementações focadas em manutenibilidade e DX (Developer Experience):
+
+* **Testes Automatizados:** Implementação de testes unitários e de integração utilizando `pytest`. Os testes cobrem desde a lógica de ETL (agregação e validação) até a integridade do banco de dados e endpoints da API.
+* **Dockerização:** O ambiente de banco de dados está containerizado, facilitando o setup e garantindo isolamento.
+* **Documentação Viva (Swagger):** A API possui documentação interativa gerada automaticamente (`/docs`), permitindo testar os endpoints diretamente pelo navegador.
+* **Design Moderno:** Uso de Tailwind CSS para uma interface limpa e responsiva.
+
+## Nota Técnica: Análise de Dados Financeiros
+
+Durante a validação, notei que o "Total Geral" de despesas apresenta valores acumulados muito altos (Trilhões). Os arquivos da ANS parecem reportar valores acumulados (o arquivo do 3º trimestre já inclui a soma dos anteriores). Ao somar todos os arquivos processados, ocorre uma sobreposição de valores.
+Optei por manter o pipeline realizando a soma direta de todos os registros encontrados nos arquivos. Isso garante a consistência matemática entre o que foi lido do arquivo e o que é exibido no Dashboard, priorizando a integridade da extração de dados sobre regras contábeis complexas de subtração.
+
 
 ### Como Executar: 
-Pré-requisitos: 
+
+**Pré-requisitos:** 
 - Python 3.10+
+- Node.js 16+
 - PostgreSQL (Local ou Docker)
 
-1. Configuração de Ambiente Crie um arquivo .env na raiz do projeto com as credenciais do banco (ou use o padrão do código):
-```bash
-DB_HOST=localhost
-DB_NAME=postgres
-DB_USER=postgres
-DB_PASSWORD=postgres
+**1. Configuração do Ambiente e Banco de Dados:**
+
+Crie um arquivo .env na raiz do projeto:
+
+``` bash
+    DB_HOST=localhost
+    DB_NAME=postgres
+    DB_USER=postgres
+    DB_PASSWORD=postgres
 ```
-(Opcional) Se tiver Docker instalado, suba um banco rapidamente:
+Se tiver Docker instalado, suba um banco rapidamente:
 
 ```bash
 docker run --name pg-test -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:13
 ```
 
-1. Instale as dependências:
+**2. Instalação das Dependências Python:**
 
-    ```pip install -r requirements.txt```
+``` bash
+    # Cria um ambiente virtual
+    python -m venv .venv
+    source .venv/bin/activate  # Linux/Mac
+    # .venv\Scripts\activate   # Windows
 
-2. Execute os Testes Unitários (Opcional):
+    # Instala bibliotecas
+    pip install -r requirements.txt
+```
 
-    ```pytest```
+**3. Execute o Pipeline ETL:**
 
-2. Execute o Pipeline ETL:
+Tarefa 1: ETL e Consolidação
 
-    Tarefa 1: ETL e Consolidação
-    ``` bash
-        # Download dos dados
-        python -m etl.download_ans
+``` bash
+    python -m etl.download_ans
+    python -m etl.processamento
+    python -m etl.consolidacao
+```
 
-        # Processa e realiza limpeza dos dados
-        python -m etl.processamento
+Tarefa 2: Qualidade e Agregação
 
-        # Processo de consolidação e arquivo zip
-        python -m etl.consolidacao
-    ```
+``` bash
+    python -m etl.validacao
+    python -m etl.enriquecimento
+    python -m etl.agregacao
+```
 
-    Tarefa 2: Qualidade, Enriquecimento e Agregação
-    ``` bash
-        # Validação de Dados
-        python -m etl.validacao
+Tarefa 3: Banco de Dados e SQL
+    
+``` bash
+    # Popula o banco PostgreSQL
+    python -m etl.carga_banco
+```
 
-        # Enriquecimento
-        python -m etl.enriquecimento
+**4. Execução da Aplicação Web:**
 
-        # Agregação e Estatística
-        python -m etl.agregacao
-    ```
+Você precisará de dois terminais abertos simultaneamente.
 
-    Tarefa 3: Banco de Dados e SQL
-    ``` bash
-        # Carga Otimizada no Banco
-        python -m etl.carga_banco
-    ```
+Terminal 1: Backend (API):
 
-    Execução de Testes:
-    ``` bash
-        # Testes Unitários (Lógica de ETL)
-        pytest tests/test_agregacao.py tests/test_validacao.py tests/test_enriquecimento.py
+``` bash
+    # Inicia o servidor FastAPI na porta 8000
+    uvicorn backend.src.main:app --reload
+```
+- Para o Swagger: http://localhost:8000/docs
 
-        # Testes de Integração (Banco de Dados e Queries SQL)
-        pytest tests/test_banco.py tests/test_queries.py
-    ```
+Terminal 2: Frontend (Interface)
 
-3. Verifique os arquivos: Os arquivos solicitados no teste estarão disponíveis em:
+``` bash
+    cd frontend
 
-    - **ETL:** ```data/processed/consolidado_despesas.zip```
-    - **Agregação:** ```data/processed/teste_seu_nome.zip```
+    # Instala dependências do Vue.js
+    npm install
+
+    # Roda o servidor de desenvolvimento
+    npm run dev
+```
+- Acesse a Aplicação: http://localhost:5173
+
+**5. Verificação e Testes Automatizados**
+
+``` bash
+    # Testes Unitários e de Integração
+    pytest
+```
+
+**Artefatos Gerados:** os arquivos solicitados no teste estarão disponíveis em:
+
+- **ETL:** ```data/processed/consolidado_despesas.zip```
+- **Agregação:** ```data/processed/teste_seu_nome.zip```
