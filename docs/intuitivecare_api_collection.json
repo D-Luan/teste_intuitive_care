@@ -1,155 +1,412 @@
 {
-	"info": {
-		"_postman_id": "b8a5e8f1-4c1d-4f2a-9e3b-5a1d7c3f8e9a",
-		"name": "Intuitive Care - Teste Técnico",
-		"description": "Collection para validação da API desenvolvida para o teste da Intuitive Care.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Listar Operadoras",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/operadoras/?page=1&limit=10",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"operadoras",
-						""
-					],
-					"query": [
-						{
-							"key": "page",
-							"value": "1",
-							"description": "Número da página"
-						},
-						{
-							"key": "limit",
-							"value": "10",
-							"description": "Itens por página"
-						}
-					]
-				},
-				"description": "Retorna a lista de operadoras com paginação e metadados."
-			},
-			"response": []
-		},
-		{
-			"name": "Buscar Operadora",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/operadoras/?search=unimed",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"operadoras",
-						""
-					],
-					"query": [
-						{
-							"key": "search",
-							"value": "unimed",
-							"description": "Filtra por Razão Social ou CNPJ"
-						}
-					]
-				},
-				"description": "Busca operadoras cujo nome ou CNPJ contenha o termo pesquisado."
-			},
-			"response": []
-		},
-		{
-			"name": "Detalhes da Operadora",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/operadoras/27452545000195",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"operadoras",
-						"27452545000195"
-					]
-				},
-				"description": "Retorna os dados cadastrais de uma operadora específica pelo CNPJ."
-			},
-			"response": []
-		},
-		{
-			"name": "Histórico de Despesas",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/operadoras/27452545000195/despesas",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"operadoras",
-						"27452545000195",
-						"despesas"
-					]
-				},
-				"description": "Retorna a lista de despesas trimestrais de uma operadora."
-			},
-			"response": []
-		},
-		{
-			"name": "Estatísticas Gerais",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/estatisticas/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"estatisticas",
-						""
-					]
-				},
-				"description": "Retorna KPI's, Top 5 operadoras e dados para o gráfico de UF."
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "51fcf498-b0d8-48f7-8be1-5b84d1d79049",
+    "name": "Intuitive Care - Teste Técnico",
+    "description": "Collection para validação da API desenvolvida para o teste da Intuitive Care.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48541419",
+    "_collection_link": "https://go.postman.co/collection/48541419-51fcf498-b0d8-48f7-8be1-5b84d1d79049?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Listar Operadoras",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/operadoras/?page=1&limit=10",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "operadoras",
+            ""
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Número da página"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Itens por página"
+            }
+          ]
+        },
+        "description": "Retorna a lista de operadoras com paginação e metadados."
+      },
+      "response": [
+        {
+          "name": "Listar Operadoras",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/operadoras/?page=1&limit=10",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "operadoras",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número da página"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Itens por página"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Wed, 04 Feb 2026 11:26:51 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "1624"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"data\": [\n        {\n            \"reg_ans\": 419761,\n            \"cnpj\": \"19541931000125\",\n            \"razao_social\": \"18 DE JULHO ADMINISTRADORA DE BENEFÍCIOS LTDA\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"MG\"\n        },\n        {\n            \"reg_ans\": 421545,\n            \"cnpj\": \"22869997000153\",\n            \"razao_social\": \"2B ODONTOLOGIA OPERADORA DE PLANOS ODONTOLÓGICOS LTDA\",\n            \"modalidade\": \"Odontologia de Grupo\",\n            \"uf\": \"SP\"\n        },\n        {\n            \"reg_ans\": 421421,\n            \"cnpj\": \"27452545000195\",\n            \"razao_social\": \"2CARE OPERADORA DE SAÚDE LTDA.\",\n            \"modalidade\": \"Medicina de Grupo\",\n            \"uf\": \"SP\"\n        },\n        {\n            \"reg_ans\": 418030,\n            \"cnpj\": \"13138885000131\",\n            \"razao_social\": \"A.P.S. ADMINISTRADORA DE BENEFÍCOS LTDA.\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"SP\"\n        },\n        {\n            \"reg_ans\": 314668,\n            \"cnpj\": \"17505793000101\",\n            \"razao_social\": \"ABERTTA SAÚDE - ASSOCIAÇÃO BENEFICENTE DOS EMPREGADOS DA ARCELORMITTAL NO BRASIL\",\n            \"modalidade\": \"Autogestão\",\n            \"uf\": \"MG\"\n        },\n        {\n            \"reg_ans\": 419621,\n            \"cnpj\": \"17687511000126\",\n            \"razao_social\": \"ABPLUS ADMINISTRADORA DE BENEFÍCIOS LTDA.\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"RJ\"\n        },\n        {\n            \"reg_ans\": 418901,\n            \"cnpj\": \"10458298000131\",\n            \"razao_social\": \"AD SALUTE ADMINISTRADORA DE BENEFÍCIOS LTDA\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"RJ\"\n        },\n        {\n            \"reg_ans\": 424293,\n            \"cnpj\": \"58280182000181\",\n            \"razao_social\": \"ADC ADMINISTRADORA DE BENEFICIOS LTDA\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"SP\"\n        },\n        {\n            \"reg_ans\": 421553,\n            \"cnpj\": \"28315826000169\",\n            \"razao_social\": \"ADM LIFE - ADMINISTRADORA DE BENEFÍCIOS LTDA.\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"SP\"\n        },\n        {\n            \"reg_ans\": 416932,\n            \"cnpj\": \"07867825000157\",\n            \"razao_social\": \"ADMSERV BENEFÍCIOS E SERVIÇOS LTDA\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"SP\"\n        }\n    ],\n    \"total\": 1109,\n    \"page\": 1,\n    \"limit\": 10\n}"
+        }
+      ]
+    },
+    {
+      "name": "Buscar Operadora",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/operadoras/?search=unimed",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "operadoras",
+            ""
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "unimed",
+              "description": "Filtra por Razão Social ou CNPJ"
+            }
+          ]
+        },
+        "description": "Busca operadoras cujo nome ou CNPJ contenha o termo pesquisado."
+      },
+      "response": [
+        {
+          "name": "Buscar Operadora",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/operadoras/?search=19541931000125",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "operadoras",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "19541931000125",
+                  "description": "Filtra por Razão Social ou CNPJ"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Wed, 04 Feb 2026 11:24:30 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "202"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"data\": [\n        {\n            \"reg_ans\": 419761,\n            \"cnpj\": \"19541931000125\",\n            \"razao_social\": \"18 DE JULHO ADMINISTRADORA DE BENEFÍCIOS LTDA\",\n            \"modalidade\": \"Administradora de Benefícios\",\n            \"uf\": \"MG\"\n        }\n    ],\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10\n}"
+        }
+      ]
+    },
+    {
+      "name": "Detalhes da Operadora",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/operadoras/27452545000195",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "operadoras",
+            "27452545000195"
+          ]
+        },
+        "description": "Retorna os dados cadastrais de uma operadora específica pelo CNPJ."
+      },
+      "response": [
+        {
+          "name": "Detalhes da Operadora",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/operadoras/27452545000195",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "operadoras",
+                "27452545000195"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Wed, 04 Feb 2026 11:25:05 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "134"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"reg_ans\": 421421,\n    \"cnpj\": \"27452545000195\",\n    \"razao_social\": \"2CARE OPERADORA DE SAÚDE LTDA.\",\n    \"modalidade\": \"Medicina de Grupo\",\n    \"uf\": \"SP\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Histórico de Despesas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/operadoras/27452545000195/despesas",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "operadoras",
+            "27452545000195",
+            "despesas"
+          ]
+        },
+        "description": "Retorna a lista de despesas trimestrais de uma operadora."
+      },
+      "response": [
+        {
+          "name": "Histórico de Despesas",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/operadoras/27452545000195/despesas",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "operadoras",
+                "27452545000195",
+                "despesas"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Wed, 04 Feb 2026 11:25:34 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "144"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n    {\n        \"ano\": 2025,\n        \"trimestre\": 3,\n        \"valor\": 674659333.71\n    },\n    {\n        \"ano\": 2025,\n        \"trimestre\": 2,\n        \"valor\": 343798564.09\n    },\n    {\n        \"ano\": 2025,\n        \"trimestre\": 1,\n        \"valor\": 30501676.51\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Estatísticas Gerais",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://127.0.0.1:8000/api/estatisticas/",
+          "protocol": "http",
+          "host": [
+            "127",
+            "0",
+            "0",
+            "1"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "estatisticas",
+            ""
+          ]
+        },
+        "description": "Retorna KPI's, Top 5 operadoras e dados para o gráfico de UF."
+      },
+      "response": [
+        {
+          "name": "Estatísticas Gerais",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/estatisticas/",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "estatisticas",
+                ""
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "date",
+              "value": "Wed, 04 Feb 2026 11:25:52 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "1400"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"total_geral\": 974102687598.9697,\n    \"media_geral\": 1917524975.5885231,\n    \"top_5\": [\n        {\n            \"razao_social\": \"BRADESCO SAÚDE S.A.\",\n            \"uf\": \"RJ\",\n            \"total\": 187610119630.07\n        },\n        {\n            \"razao_social\": \"AMIL ASSISTÊNCIA MÉDICA INTERNACIONAL S.A.\",\n            \"uf\": \"SP\",\n            \"total\": 109364753938.82\n        },\n        {\n            \"razao_social\": \"HAPVIDA ASSISTENCIA MEDICA S.A.\",\n            \"uf\": \"CE\",\n            \"total\": 48430940859.93\n        },\n        {\n            \"razao_social\": \"NOTRE DAME INTERMÉDICA SAÚDE S.A.\",\n            \"uf\": \"SP\",\n            \"total\": 47302529283.99\n        },\n        {\n            \"razao_social\": \"CAIXA DE ASSISTÊNCIA DOS FUNCIONÁRIOS DO BANCO DO BRASIL\",\n            \"uf\": \"DF\",\n            \"total\": 37049199651.71\n        }\n    ],\n    \"por_uf\": [\n        {\n            \"uf\": \"SP\",\n            \"total\": 313907380393.75977\n        },\n        {\n            \"uf\": \"RJ\",\n            \"total\": 260084886354.09\n        },\n        {\n            \"uf\": \"PR\",\n            \"total\": 82803605619.92\n        },\n        {\n            \"uf\": \"MG\",\n            \"total\": 77350648832.25998\n        },\n        {\n            \"uf\": \"CE\",\n            \"total\": 58782662487.65001\n        },\n        {\n            \"uf\": \"DF\",\n            \"total\": 41457187320.86999\n        },\n        {\n            \"uf\": \"RS\",\n            \"total\": 39089180902.96002\n        },\n        {\n            \"uf\": \"SC\",\n            \"total\": 26193514823.739998\n        },\n        {\n            \"uf\": \"ES\",\n            \"total\": 20230280976.56\n        },\n        {\n            \"uf\": \"GO\",\n            \"total\": 15963762718.739998\n        },\n        {\n            \"uf\": \"PE\",\n            \"total\": 13035183947.85\n        },\n        {\n            \"uf\": \"AL\",\n            \"total\": 5739837926.78\n        },\n        {\n            \"uf\": \"BA\",\n            \"total\": 5098189967.309999\n        },\n        {\n            \"uf\": \"MT\",\n            \"total\": 4066973566.24\n        },\n        {\n            \"uf\": \"SE\",\n            \"total\": 3231958232.05\n        },\n        {\n            \"uf\": \"AM\",\n            \"total\": 1933941694.9699998\n        },\n        {\n            \"uf\": \"PA\",\n            \"total\": 1534672076.62\n        },\n        {\n            \"uf\": \"MS\",\n            \"total\": 1162338896.55\n        },\n        {\n            \"uf\": \"TO\",\n            \"total\": 1043571502.51\n        },\n        {\n            \"uf\": \"AC\",\n            \"total\": 900062693.78\n        },\n        {\n            \"uf\": \"PI\",\n            \"total\": 195427419.3\n        },\n        {\n            \"uf\": \"PB\",\n            \"total\": 181614122\n        },\n        {\n            \"uf\": \"RO\",\n            \"total\": 108008183.66999999\n        },\n        {\n            \"uf\": \"MA\",\n            \"total\": 7796938.79\n        }\n    ]\n}"
+        }
+      ]
+    }
+  ]
 }
