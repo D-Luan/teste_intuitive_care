@@ -43,21 +43,15 @@ def limpar_valor_monetario(valor):
     integridade da coluna numérica.
     """
     
-    if pd.isna(valor):
-        return 0.0
+    if pd.isna(valor): return 0.0
     
     val_str = str(valor).strip()
     
-    if val_str.replace('.', '', 1).isdigit(): 
-        return float(val_str)
-
+    if val_str.replace('.', '', 1).isdigit(): return float(val_str)
     if ',' in val_str:
         limpo = val_str.replace('.', '').replace(',', '.')
-        try:
-            return float(limpo)
-        except ValueError:
-            return 0.0
-            
+        try: return float(limpo)
+        except ValueError: return 0.0
     return 0.0
 
 def carregar_dataframe_robusto(arquivo_aberto, nome_arquivo):
@@ -69,30 +63,32 @@ def carregar_dataframe_robusto(arquivo_aberto, nome_arquivo):
     
     extensao = nome_arquivo.lower().split('.')[-1]
     
-    # Decodifica Excel
     if extensao == 'xlsx':
-        try:
+        try: 
             return pd.read_excel(arquivo_aberto, dtype=str)
-        except Exception as e:
-            print(f"Erro ao ler Excel: {e}")
+        except Exception as e: 
+            print(f"Erro Excel: {e}"); 
             return None
 
-    # Decodifica CSV/TXT com encoding legado
     if extensao in ['csv', 'txt']:
         try:
             arquivo_aberto.seek(0)
-            return pd.read_csv(arquivo_aberto, sep=';', encoding='ISO-8859-1', dtype=str)
-        except Exception:
+            return pd.read_csv(arquivo_aberto, sep=';', encoding='utf-8', dtype=str)
+        except:
             pass
-
-        # Decodifica CSV moderno (UTF-8) ou separador vírgula
+            
         try:
             arquivo_aberto.seek(0)
             return pd.read_csv(arquivo_aberto, sep=',', encoding='utf-8', dtype=str)
-        except Exception:
+        except:
+            pass
+
+        try:
+            arquivo_aberto.seek(0)
+            return pd.read_csv(arquivo_aberto, sep=';', encoding='ISO-8859-1', dtype=str)
+        except:
             pass
             
-    print(f"Formato não suportado ou ilegível: {nome_arquivo}")
     return None
 
 def processar_arquivo_individual(caminho_zip, primeiro_arquivo):
@@ -102,99 +98,90 @@ def processar_arquivo_individual(caminho_zip, primeiro_arquivo):
     """
     
     nome_zip = os.path.basename(caminho_zip)
-    print(f"Processando: {nome_zip}...")
-
     trimestre, ano = extrair_metadados_nome(nome_zip)
 
     if not trimestre or not ano:
-        print(f"Ignorado: Não foi possível identificar Ano/Trimestre no nome {nome_zip}")
-        return
+        return False
 
     try:
         with zipfile.ZipFile(caminho_zip, 'r') as z:
             candidatos = [f for f in z.namelist() if f.lower().endswith(('.csv', '.txt', '.xlsx'))]
-            
-            if not candidatos:
-                print(f"Ignorado: {nome_zip}")
-                return
+            if not candidatos: return False
 
             nome_arquivo_interno = candidatos[0]
-            
             with z.open(nome_arquivo_interno) as f:
                 df = carregar_dataframe_robusto(f, nome_arquivo_interno)
                 
-                if df is None or df.empty:
-                    return
+                if df is None or df.empty: return False
 
-                col_descricao = None
-                for col in df.columns:
-                    if 'DESCRICAO' in col.upper():
-                        col_descricao = col
-                        break
-                
-                if not col_descricao:
-                    print("Coluna de Descrição não encontrada.")
-                    return
+                col_descricao = next((c for c in df.columns if 'DESCRICAO' in c.upper()), None)
+                if not col_descricao: return False
 
-                termos_interesse = ["EVENTO", "SINISTRO"]
-                filtro = df[col_descricao].astype(str).str.upper().str.contains('|'.join(termos_interesse), na=False)
+                # Filtra apenas linhas contendo "EVENTO" ou "SINISTRO" para isolar 
+                # as despesas assistenciais diretas, ignorando outras receitas/despesas operacionais.
+                termos = ["EVENTO", "SINISTRO"]
+                filtro = df[col_descricao].astype(str).str.upper().str.contains('|'.join(termos), na=False)
                 df_filtrado = df[filtro].copy()
 
-                if df_filtrado.empty:
-                    print("Sem dados de Eventos/Sinistros.")
-                    return
+                if df_filtrado.empty: return False
 
                 df_filtrado['trimestre'] = trimestre
                 df_filtrado['ano'] = ano
-
-                col_valor = [c for c in df.columns if 'VALOR' in c.upper() or 'VL_' in c.upper()][0]
+                
+                col_valor = next((c for c in df.columns if 'VALOR' in c.upper() or 'VL_' in c.upper()), None)
+                if not col_valor: return False
+                
                 df_filtrado['valor'] = df_filtrado[col_valor].apply(limpar_valor_monetario)
 
-                cols_finais = {
-                    col_descricao: 'descricao',
-                    'REG_ANS': 'reg_ans',
-                    'DATA': 'data_contabil'
-                }
-                df_filtrado.rename(columns=cols_finais, inplace=True)
-
-                colunas_saida = ['trimestre', 'ano', 'data_contabil', 'reg_ans', 'descricao', 'valor']
+                cols_map = {col_descricao: 'descricao', 'REG_ANS': 'reg_ans', 'DATA': 'data_contabil'}
+                df_filtrado.rename(columns={k:v for k,v in cols_map.items() if k in df_filtrado.columns}, inplace=True)
                 
-                for col in colunas_saida:
-                    if col not in df_filtrado.columns:
-                        df_filtrado[col] = None
+                for col in ['data_contabil', 'reg_ans']:
+                    if col not in df_filtrado.columns: df_filtrado[col] = None
 
-                df_final = df_filtrado[colunas_saida]
+                df_final = df_filtrado[['trimestre', 'ano', 'data_contabil', 'reg_ans', 'descricao', 'valor']]
 
-                # Trade-off Técnico (Processamento Incremental):
+                # Trade-off (Processamento Incremental):
                 # Utilizei mode='a' (append) para escrever no disco à medida que processamos.
                 # Isso mantém o consumo de memória baixo e constante, independente do volume total de dados.
                 modo = 'w' if primeiro_arquivo else 'a'
                 header = primeiro_arquivo
                 df_final.to_csv(ARQUIVO_SAIDA, index=False, mode=modo, header=header, encoding='utf-8')
                 
-                print(f"Finalizado: {len(df_final)} linhas. (Ref: {trimestre}T{ano})\n")
+                print(f"Processado: {nome_zip} ({len(df_final)} linhas)")
+                return True
 
     except Exception as e:
-        print(f"Erro crítico em {nome_zip}: {e}")
-        raise e
+        print(f"Erro em {nome_zip}: {e}")
+        return False
 
 def main():
     os.makedirs(PASTA_PROCESSED, exist_ok=True)
-
-    if os.path.exists(ARQUIVO_SAIDA):
-        os.remove(ARQUIVO_SAIDA)
+    if os.path.exists(ARQUIVO_SAIDA): os.remove(ARQUIVO_SAIDA)
 
     zips = listar_zips_raw(PASTA_RAW)
+    if not zips: raise Exception("Sem arquivos.")
 
-    if not zips:
-        raise Exception("Sem arquivos.")
+    periodos_processados = set()
+    primeiro = True
 
-    print(f"Iniciando processamento de {len(zips)} arquivos...\n")
+    print(f"Iniciando processamento de {len(zips)} arquivos...")
     
-    for i, zip_file in enumerate(zips):
-        processar_arquivo_individual(zip_file, (i == 0))
+    for zip_file in zips:
+        nome = os.path.basename(zip_file)
+        t, a = extrair_metadados_nome(nome)
+        
+        chave = f"{a}-{t}"
+        if chave in periodos_processados:
+            print(f"Ignorando duplicata de período: {nome} ({t}º Trimestre {a})")
+            continue
+            
+        sucesso = processar_arquivo_individual(zip_file, primeiro)
+        if sucesso:
+            periodos_processados.add(chave)
+            primeiro = False
 
-    print("\nProcessamento Concluído!")
+    print("\nProcessamento concluído!")
 
 if __name__ == "__main__":
     main()
