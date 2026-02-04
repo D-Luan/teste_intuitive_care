@@ -1,0 +1,155 @@
+{
+	"info": {
+		"_postman_id": "b8a5e8f1-4c1d-4f2a-9e3b-5a1d7c3f8e9a",
+		"name": "Intuitive Care - Teste Técnico",
+		"description": "Collection para validação da API desenvolvida para o teste da Intuitive Care.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Listar Operadoras",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/operadoras/?page=1&limit=10",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"operadoras",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Número da página"
+						},
+						{
+							"key": "limit",
+							"value": "10",
+							"description": "Itens por página"
+						}
+					]
+				},
+				"description": "Retorna a lista de operadoras com paginação e metadados."
+			},
+			"response": []
+		},
+		{
+			"name": "Buscar Operadora",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/operadoras/?search=unimed",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"operadoras",
+						""
+					],
+					"query": [
+						{
+							"key": "search",
+							"value": "unimed",
+							"description": "Filtra por Razão Social ou CNPJ"
+						}
+					]
+				},
+				"description": "Busca operadoras cujo nome ou CNPJ contenha o termo pesquisado."
+			},
+			"response": []
+		},
+		{
+			"name": "Detalhes da Operadora",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/operadoras/27452545000195",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"operadoras",
+						"27452545000195"
+					]
+				},
+				"description": "Retorna os dados cadastrais de uma operadora específica pelo CNPJ."
+			},
+			"response": []
+		},
+		{
+			"name": "Histórico de Despesas",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/operadoras/27452545000195/despesas",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"operadoras",
+						"27452545000195",
+						"despesas"
+					]
+				},
+				"description": "Retorna a lista de despesas trimestrais de uma operadora."
+			},
+			"response": []
+		},
+		{
+			"name": "Estatísticas Gerais",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/estatisticas/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"estatisticas",
+						""
+					]
+				},
+				"description": "Retorna KPI's, Top 5 operadoras e dados para o gráfico de UF."
+			},
+			"response": []
+		}
+	]
+}
