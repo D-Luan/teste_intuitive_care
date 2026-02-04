@@ -15,6 +15,7 @@ Este repositório contém a solução completa para o desafio técnico, abrangen
 - [Tarefa 2: Qualidade e Transformação](#decisões-técnicas-da-tarefa-2---teste-de-transformação-e-validação-de-dados)
 - [Tarefa 3: Banco de Dados](#decisões-técnicas-da-tarefa-3---teste-de-banco-de-dados-e-análise)
 - [Tarefa 4: API e Frontend](#decisões-técnicas-da-tarefa-4---teste-de-api-e-interface-web)
+- [Arquivos ZIPs para Avaliação](#arquivos-zips-para-avaliação)
 - [Diferenciais do Projeto](#diferenciais-e-qualidade-de-código)
 - [Como Executar](#como-executar)
 
@@ -285,6 +286,15 @@ Demonstração da aplicação Fullstack:
 Conforme solicitado, uma coleção completa do Postman foi criada e versionada no repositório. Contêm exemplos de todas as rotas (`GET`), incluindo payloads de resposta e query parameters configurados.
 
 Veja a coleção em docs: [Intuitive Care API Collection](./docs/intuitivecare_api_collection.json)
+
+
+## Arquivos ZIPs para Avaliação
+
+Os arquivos solicitados no edital podem ser acessados diretamente nos links abaixo:
+
+* **Arquivo consolidado:** [consolidado_despesas.zip](./data/processed/consolidado_despesas.zip)
+* **Arquivo agregado**: [teste_luan_nascimento.zip](./data/processed/teste_luan_nascimento.zip)
+* **Todos os artefatos do processo ETL**: [pasta data](./data)
 
 
 ## Diferenciais e Qualidade de Código
