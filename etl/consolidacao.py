@@ -57,45 +57,40 @@ def processar_consolidacao():
     print("\nIniciando Consolidação dos Dados...")
     
     if not os.path.exists(ARQUIVO_DESPESAS):
-        raise Exception(f"Arquivo de despesas não encontrado: {ARQUIVO_DESPESAS}. Rode a etapa 1.2 antes.")
+        raise Exception(f"Arquivo de despesas não encontrado: {ARQUIVO_DESPESAS}")
 
     df_despesas = pd.read_csv(ARQUIVO_DESPESAS, dtype={'reg_ans': int, 'valor': float})
     print(f"Despesas carregadas: {len(df_despesas)} linhas.")
 
-    df_cadop = carregar_cadop()
+    # Agrupa para garantir unicidade da chave primária composta
+    df_despesas = df_despesas.groupby(['reg_ans', 'ano', 'trimestre'], as_index=False)['valor'].sum()
 
-    # Trade-off - Estratégia de Join:
-    # Utilizei LEFT JOIN para priorizar a integridade dos dados financeiros (Despesas).
-    # Se uma operadora não for encontrada no cadastro ativo,
-    # mantêm o registro financeiro e marca os dados cadastrais como desconhecidos. 
+    df_cadop = carregar_cadop()
     df_final = pd.merge(df_despesas, df_cadop, on='reg_ans', how='left')
 
-    # Remove valores zerados ou negativos que não agregam valor analítico. 
-    qtd_antes = len(df_final)
-    df_final = df_final[df_final['valor'] != 0]
-    qtd_zeros = qtd_antes - len(df_final)
-
-    print(f"Limpeza: {qtd_zeros} linhas com valor 0.0 removidas.")
-    
-    # Tratamento de Falhas no Join:
-    # Preenchimento de valores nulos gerados pelo Left Join 
-    # para operadoras não encontradas. 
     df_final['RazaoSocial'] = df_final['RazaoSocial'].fillna(f"DESCONHECIDA")
     df_final['CNPJ'] = df_final['CNPJ'].fillna("00000000000000")
 
     df_final.rename(columns={'valor': 'ValorDespesas', 'trimestre': 'Trimestre', 'ano': 'Ano'}, inplace=True)
 
-    colunas_saida = ['CNPJ', 'RazaoSocial', 'Trimestre', 'Ano', 'ValorDespesas']
+    print("Aplicando conversão de Acumulado (YTD) para Trimestral (Delta)...")
     
-    for col in colunas_saida:
-        if col not in df_final.columns:
-            df_final[col] = None
+    # Ordenação necessária para o cálculo de diferença temporal (diff)
+    df_final.sort_values(by=['reg_ans', 'Ano', 'Trimestre'], inplace=True)
 
-    # Exportação em UTF-8 com ; para compatibilidade com Excel brasileiro 
+    # Regra de Negócio: Conversão YTD -> Quarterly
+    # Os dados da ANS são acumulados (Year-to-Date). Para obter o valor real do trimestre,
+    # calculei a diferença entre o trimestre atual e o anterior, agrupando por Ano 
+    # (para resetar a conta em Janeiro) e por Operadora.
+    df_final['ValorDespesas'] = df_final.groupby(['reg_ans', 'Ano'])['ValorDespesas'].transform(lambda x: x.diff().fillna(x))
+
+    colunas_saida = ['CNPJ', 'RazaoSocial', 'Trimestre', 'Ano', 'ValorDespesas']
+    for col in colunas_saida:
+        if col not in df_final.columns: df_final[col] = None
+
     df_export = df_final[colunas_saida]
 
     print("\nGerando artefatos finais...")
-    
     df_export.to_csv(ARQUIVO_FINAL_CSV, index=False, encoding='utf-8', sep=';')
     
     with zipfile.ZipFile(ARQUIVO_FINAL_ZIP, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -106,7 +101,7 @@ def processar_consolidacao():
     if os.path.exists(ARQUIVO_FINAL_CSV):
         os.remove(ARQUIVO_FINAL_CSV)
     
-    print("\nConsolidação e Análise Concluídos com Sucesso!")
+    print("\nConsolidação Concluída! Valores agora representam o gasto real do trimestre.")
 
 if __name__ == "__main__":
     processar_consolidacao()
