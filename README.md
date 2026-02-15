@@ -16,12 +16,13 @@ Este repositório contém a solução completa para o desafio técnico, abrangen
 - [Tarefa 1: Integração e ETL](#decisões-técnicas-da-tarefa-1---teste-de-integração-com-api-pública)
 - [Tarefa 2: Qualidade e Transformação](#decisões-técnicas-da-tarefa-2---teste-de-transformação-e-validação-de-dados)
 - [Tarefa 3: Banco de Dados](#decisões-técnicas-da-tarefa-3---teste-de-banco-de-dados-e-análise)
+- [3.2. Modelagem de Dados e Trade-Offs](#32-modelagem-de-dados-e-trade-offs)
 - [Tarefa 4: API e Frontend](#decisões-técnicas-da-tarefa-4---teste-de-api-e-interface-web)
 - [Imagens do Dashboard](#dashboard-de-estatísticas)
 - [Documentação da API](#44-documentação-da-api)
 - [Arquivos ZIPs para Avaliação](#arquivos-zips-para-avaliação)
 - [Diferenciais do Projeto](#diferenciais-e-qualidade-de-código)
-- [Tratamento de Regras de Negócios](#lógica-de-dados-e-tratamento-de-regras-de-negócios)
+- [Tratamento de Regras de Negócio](#lógica-de-dados-e-tratamento-de-regras-de-negócio)
 - [Como Executar](#como-executar)
 
 ## Decisões Técnicas da Tarefa 1 - TESTE DE INTEGRAÇÃO COM API PÚBLICA
@@ -173,6 +174,14 @@ with engine.connect() as conn:
 ```
 
 ### 3.2. Modelagem de Dados e Trade-offs
+
+![Modelagem de Dados - Star Schema](assets/modelagem_dados.png)
+
+O diagrama acima ilustra a arquitetura **Star Schema** adotada para o teste. 
+- **Fato (`fato_despesas`):** Centraliza as transações financeiras com granularidade trimestral.
+- **Dimensão (`dim_operadoras`):** Armazena os dados cadastrais, garantindo normalização.
+- **Agregação (`agg_despesas`):** Tabela de performance que armazena pré-cálculos estatísticos, permitindo que o Dashboard carregue instantaneamente sem sobrecarregar o banco com somas repetitivas.
+
 Para atender aos requisitos de performance e integridade, tomei as seguintes decisões:
 
 #### **A. Normalização: Opção Tabelas normalizadas separadas**
@@ -314,7 +323,7 @@ Além dos requisitos obrigatórios, o projeto conta com implementações focadas
 * **Documentação Viva (Swagger):** A API possui documentação interativa gerada automaticamente (`/docs`), permitindo testar os endpoints diretamente pelo navegador.
 * **Design Moderno:** Uso de Tailwind CSS para uma interface limpa e responsiva.
 
-### Lógica de Dados e Tratamento de Regras de Negócios
+### Lógica de Dados e Tratamento de Regras de Negócio
 
 Durante a análise dos dados da ANS, identifiquei alguns problemas na estrutura contábil que exigiram tratamentos específicos para garantir a consistência dos valores:
 
@@ -423,7 +432,7 @@ Terminal 2: Frontend (Interface)
 **5. Verificação e Testes Automatizados**
 
 **Script de Teste Unificado para o ETL:**
-Para garantir a integridade da aplicação, você pode rodar a os testes completo.
+Para garantir a integridade da aplicação, você pode rodar os testes completo.
 
 **Opção A: Script de Teste Unificado (Recomendado):**
 Este script executa automaticamente os testes de ETL e Validação.
