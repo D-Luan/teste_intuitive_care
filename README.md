@@ -8,6 +8,8 @@
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Status](https://img.shields.io/badge/STATUS-CONCLUÍDO-success?style=for-the-badge)
 
+![Arquitetura do Projeto](assets/arquitetura_projeto.png)
+
 Este repositório contém a solução completa para o desafio técnico, abrangendo desde o processamento de dados da ANS (ETL) até a visualização em um Dashboard interativo.
 
 ### Índice
@@ -19,6 +21,7 @@ Este repositório contém a solução completa para o desafio técnico, abrangen
 - [Documentação da API](#44-documentação-da-api)
 - [Arquivos ZIPs para Avaliação](#arquivos-zips-para-avaliação)
 - [Diferenciais do Projeto](#diferenciais-e-qualidade-de-código)
+- [Tratamento de Regras de Negócios](#lógica-de-dados-e-tratamento-de-regras-de-negócios)
 - [Como Executar](#como-executar)
 
 ## Decisões Técnicas da Tarefa 1 - TESTE DE INTEGRAÇÃO COM API PÚBLICA
@@ -278,6 +281,9 @@ Demonstração da aplicação Fullstack:
 ### Dashboard de Estatísticas
 ![Dashboard com Gráfico de Despesas](assets/dashboard_view.png)
 
+### Ranking das Operadoras
+![Ranking das Operadoras](assets/ranking_operadoras.png)
+
 ### Tabela de Busca das Operadoras
 ![Tabela de Busca](assets/tabela_busca.png)
 
@@ -308,10 +314,15 @@ Além dos requisitos obrigatórios, o projeto conta com implementações focadas
 * **Documentação Viva (Swagger):** A API possui documentação interativa gerada automaticamente (`/docs`), permitindo testar os endpoints diretamente pelo navegador.
 * **Design Moderno:** Uso de Tailwind CSS para uma interface limpa e responsiva.
 
-## Nota Técnica: Análise de Dados Financeiros
+### Lógica de Dados e Tratamento de Regras de Negócios
 
-Durante a validação, notei que o "Total Geral" de despesas apresenta valores acumulados muito altos (Trilhões). Os arquivos da ANS parecem reportar valores acumulados (o arquivo do 3º trimestre já inclui a soma dos anteriores). Ao somar todos os arquivos processados, ocorre uma sobreposição de valores.
-Optei por manter o pipeline realizando a soma direta de todos os registros encontrados nos arquivos. Isso garante a consistência matemática entre o que foi lido do arquivo e o que é exibido no Dashboard, priorizando a integridade da extração de dados sobre regras contábeis complexas de subtração.
+Durante a análise dos dados da ANS, identifiquei alguns problemas na estrutura contábil que exigiram tratamentos específicos para garantir a consistência dos valores:
+
+- **Filtragem Hierárquica (problema da Duplicidade):** O plano de contas da ANS é hierárquico (ex: Conta 4 engloba a 41, que engloba a 411). Somar todas as linhas contendo "Eventos" resultaria em valores duplicados ou triplicados (na casa dos trilhões). Então, fiz com que a pipeline filtre a conta sintética 411 (Eventos/Sinistros Conhecidos ou Avisados) ou suas variações, eliminando a "Conta Pai" e contas de Passivo para capturar apenas a despesa real do período.
+
+- **Seleção de Colunas Temporais (problema do 1º Trimestre):** Os arquivos CSV contêm VL_SALDO_INICIAL e VL_SALDO_FINAL. Priorizei a extração da coluna VL_SALDO_FINAL porque no 1º Trimestre, o VL_SALDO_INICIAL é frequentemente zero. Utilizar a coluna incorreta faria com que os dados de Jan/Fev/Mar fossem ignorados.
+
+- **Natureza dos Dados (YTD) e Cálculo de Deltas:** Os dados contábeis da ANS são reportados de forma acumulada (Year-to-Date). Ou seja, o valor do 3º Trimestre inclui a soma do 1º e 2º. Para apresentar a visão financeira real (quanto foi gasto em cada trimestre), implementei uma lógica de Cálculo de Delta na etapa de consolidação. O algoritmo agrupa os dados por Ano e Operadora, ordena cronologicamente e subtrai o valor do trimestre anterior (Valor Atual - Valor Anterior). Isso corrigiu a distorção dos dados brutos, permitindo que o Dashboard exiba a despesa trimestral real e não uma soma duplicada.
 
 
 ### Como Executar: 
@@ -350,6 +361,16 @@ docker run --name pg-test -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
 ```
 
 **3. Execute o Pipeline ETL:**
+
+**Opção A: Execução Automática (Recomendado):**
+Utilize o script orquestrador que executa todas as etapas sequencialmente e trata erros:
+
+``` bash
+    python executa_pipeline.py
+```
+
+**Opção B: Execução Manual (Passo a Passo):**
+Caso queira executar ou depurar cada etapa individualmente:
 
 Tarefa 1: ETL e Consolidação
 
@@ -401,12 +422,21 @@ Terminal 2: Frontend (Interface)
 
 **5. Verificação e Testes Automatizados**
 
+**Script de Teste Unificado para o ETL:**
+Para garantir a integridade da aplicação, você pode rodar a os testes completo.
+
+**Opção A: Script de Teste Unificado (Recomendado):**
+Este script executa automaticamente os testes de ETL e Validação.
 ``` bash
-    # Testes Unitários e de Integração
-    pytest
+    python executa_testes.py
+```
+**Opção B: Testes de Integração da API:**
+Para testar especificamente os endpoints do Backend.
+``` bash
+    python -m pytest backend/src/tests/test_api.py -v
 ```
 
 **Artefatos Gerados:** os arquivos solicitados no teste estarão disponíveis em:
 
 - **ETL:** ```data/processed/consolidado_despesas.zip```
-- **Agregação:** ```data/processed/teste_seu_nome.zip```
+- **Agregação:** ```data/processed/teste_luan_nascimento.zip```
